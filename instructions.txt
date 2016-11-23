@@ -1,0 +1,32 @@
+Instructions:
+
+1. Setup SQS.
+	a) goto https://console.aws.amazon.com/sqs/home?region=us-west-2 and CREATE a new queue
+	b) Twtani.py gets the tweets from twitter stream and put them into the queue, so you need to connect to the queue that you just created in step a.
+	c) If you keep the twtani.py running, the aws console for SQS should show an increasing number of messages in the queue
+
+2. Setup SNS:
+	a) goto https://us-west-2.console.aws.amazon.com/sns/v2/home?region=us-west-2#/home and create a new TOPIC, remember the topic description as you will be using it.
+	b) enable port forwarding on your router and note down your public IP (ipv4 only seems to work). To know your ipv4 public IP, visit: http://www.whatismypublicip.com/
+	c) Now create a new SUBSCRIPTION and subscribe to the newly created topic in step a.
+	d) SNS will send a confirmatory POST request that contains a special URL which you need to open to confirm the subscription.
+	e) The code to parse the POST request is present in the '/' handler of application.py, the confirmation URL will be printed on the screen and you need to open that in a seperate browser window.
+	f) If by any chance you lost the POST confirmation request, SNS can send it again when you click on the REQUEST CONFIRMATION button on the aws sns console.
+	g) After you confirm, the aws sns console now shows the subscription ARN instead of showing "PENDING CONFIRMATION"
+
+3. Sentiment Setup:
+	a) Now there is a file called readQueue.py present in the alchemy folder, this file continuously polls the SQS queue and gets the messages. The polling is done using long polling, so nothing to worry about the efficiency as of now.
+	b) This file will ask the alchemy sentiment API about the sentiment of every tweet and will make a JSON object of the entire tweet data and sentiment data
+	c) Once the sentiment is ready, this file will issue a SNS notification will be directed towards the / handle in flask.
+	d) So everytime a tweet is processed, we get POST requests at the '/' handle.
+
+4. Elastic Search Setup:	
+	a) When flask recieves a notification from SNS, flask will open the POST request, extract the tweet JSON object and index in into elastic search.
+
+	Pending work:
+	1. The front end should somehow visually show that a new tweet has been indexed into elastic search
+	2. Deploy the whole app on EBS and EC2 (may be for the auxillary files). Probably we can take help from Krishnan here as to know which is the best way to host all the files.
+
+	Note: Now that I enabled port forwarding, you can connect to my localhost anytime, everything works but I cant think of a way to share the console of flask for your debugginh. TeamViewer can help in this case maybe.
+
+	Call me if you have any questions or if was not clear at any point.

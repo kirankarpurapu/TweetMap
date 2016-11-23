@@ -136,7 +136,11 @@
 			}
 			// Showing the tweets, this part of the code gets executed when the page is loaded
 			function renderTweets(){
-			var list  = '{{tweets|safe}}';
+			// var list  = '{{tweets|safe}}';
+			var list  = '{{tweets|tojson}}'
+			// var list  = '{{tweets|safe}}'
+
+			console.log("Data from backend: " + list);
 			initialize();
 			if(list == null || list.length==0)
 			{
@@ -147,7 +151,8 @@
 			else{
 				//console.log("KIRAN "+typeof list+ list.length +list);
 				 res = JSON.parse(list);
-				 console.log(typeof res)
+				 // res = list;
+				 // console.log(typeof res)
 				 console.log(res);
 				 
 				 //console.log(data.length);
@@ -173,7 +178,8 @@
 				 if(data!=null)	{
 					 size=data.length;
 					 for(var i = 0; i < data.length; i++) {
-						var obj = JSON.parse(data[i]);
+						// var obj = JSON.parse(data[i]);
+						var obj = data[i];
 						taxiData[i] = new google.maps.LatLng(obj['latitude'], obj['longitude']);
 						nameArray[i] = obj['name'];
 						textArray[i] = obj['text'];

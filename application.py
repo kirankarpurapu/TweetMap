@@ -57,7 +57,7 @@ def processNotification():
 
 @app.route ('/',methods = ['POST', 'GET'])
 def processInput():
-	optionsTemplateCode = makeOptionsData()
+	# optionsTemplateCode = makeOptionsData()
 	if request.method == 'POST':
 		searchKey = request.form['keyword']
 		type_txt= request.form['happy']
@@ -75,15 +75,14 @@ def processInput():
 		tweets = getMatchingTweets(searchKey,type_txt,isnormal,lat,lng,dist)	
 	# should improve on this logic	
 	else:
-		print ("NOT A POST REQUEST", "The template code is ", optionsTemplateCode)
-		tweets = ""	
-	tweets = ""	
+		print ("NOT A POST REQUEST", "returning empty tweet array")
+		tweets = {}	
 	return render_template('tweetmap.html', tweets = tweets)
 	
 
 def getMatchingTweets(search_key,type_txt,isnormal,lat,lng,dist):
 	listOfTweetsAsList = []
-	dict = {}
+	data_dict = {}
 	resultDict={}
 	print("START")
 	#bodyOfRequest = '{"query":{"query_string":{"query": "' + search_key+ '"}}}'
@@ -104,16 +103,18 @@ def getMatchingTweets(search_key,type_txt,isnormal,lat,lng,dist):
 	print("%d documents found" % res['hits']['total'])
 	for doc in res['hits']['hits']:
 		#print("From elatic search"+doc['_source']['text'])
-		dict['name'] = doc['_source']['userName']
-		dict['text'] = doc['_source']['text']
-		dict['date'] = doc['_source']['date']
-		dict['latitude'] = doc['_source']['latitude']
-		dict['longitude'] = doc['_source']['longitude']
+		print("*************")
+		data_dict['name'] = doc['_source']['userName']
+		data_dict['text'] = doc['_source']['text']
+		data_dict['date'] = doc['_source']['date']
+		data_dict['latitude'] = doc['_source']['latitude']
+		data_dict['longitude'] = doc['_source']['longitude']
 
 		# Replaced the following lines with the code above.
 		#dict['latitude'] = doc['fields']['latitude']
 		#dict['longitude'] = doc['fields']['longitude']
-		jsonArray = json.dumps(dict)
+		# jsonArray = json.dumps(data_dict)
+		jsonArray = data_dict
 		listOfTweetsAsList.append(jsonArray)
 		resultDict['search_key']=search_key
 		resultDict['type_txt']=type_txt
@@ -134,15 +135,20 @@ def getMatchingTweets(search_key,type_txt,isnormal,lat,lng,dist):
 		resultDict['isnormal']=isnormal
 		resultDict['message'] = message
 		resultDict['result'] = None
-		#tweets = json.dumps(dict)
-		dataToReturn = stringEscape(str(json.dumps(resultDict))) 
+		#tweets = json.dumps(data_dict)
+		# dataToReturn = stringEscape(str(json.dumps(resultDict))) 
+		dataToReturn = resultDict
 		#print ("DATA to return : " , dataToReturn)
 		return dataToReturn
 	else:
-		print ("HORRAY!!, FOUND A FEW MATCHING TWEETS")
+		print ("HORRAY!!, FOUND A FEW MATCHING TWEETS for " + search_key)
 		resultDict['message'] = "SUCCESS"
-		dataToReturn = stringEscape(str(json.dumps(resultDict)))
+		# dataToReturn = stringEscape(str(json.dumps(resultDict)))
+		# dataToReturn = str(json.dumps(resultDict)) 
+		print("RETURNING ******************* " , resultDict ," to the front end")
+		dataToReturn = resultDict
 		#print ("DATA to return : " , dataToReturn)
+		# print(type(dataToReturn))
 		return dataToReturn
 
 def stringEscape(myString):

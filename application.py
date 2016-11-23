@@ -1,9 +1,10 @@
 
 from __future__ import print_function
-from flask import Flask, redirect, url_for, request, render_template
+from flask import Flask, redirect, url_for, request, render_template, Response
 import json
 import os
 import elasticsearch
+import urllib2
 
 
 #SNS subject : TweetMap
@@ -28,43 +29,42 @@ es = elasticsearch.Elasticsearch()
 #     verify_certs=True,
 #     connection_class=RequestsHttpConnection
 # )
-
-
-@app.route ('/',methods = ['POST', 'GET'])
-def processInput():
-	#optionsTemplateCode = makeOptionsData()
+@app.route('/notifications',methods = ['POST', 'GET'])
+def processNotification():
 	if request.method == 'POST':
-		#TODO: later abstract the following few lines to a new end point and name it 'subscribeSNS'
-		# to subscribe to SNS
-		print("-----------------------------")
-		# print("POST MESSAGE : " + str(request))
 		print("------------------------------")
 		hdr = request.headers.get('X-Amz-Sns-Message-Type')
 		print("header : " + str(hdr))
 		jsonData = json.loads(request.data)
 		if hdr == 'SubscriptionConfirmation' and 'SubscribeURL' in jsonData:
-			# URL = request.get(jsonData['SubscribeURL'])
-			print("URL : " + jsonData['SubscribeURL'])
+			URL = jsonData['SubscribeURL']
+			print("URL : " + URL)
+			urllib2.urlopen(URL).read()
+			print("Made a get request to the confirmation URL")
 		print("------------------------------")
-		print("------------------------------")
-
-		print("------------------------------")
-		# print("POST MESSAGE: " + str(request.data))
-		jsonData = json.loads(request.data)
-		# print("POST BODY : " + str(jsonData))
-		hdr = request.headers.get('X-Amz-Sns-Message-Type')
 		if hdr == 'Notification':
 			# messageJSON = json.loads(jsonData['Message'])
 			print("Notification content \n" + jsonData['Message'])
 			es.index(index='myposts', doc_type='mytweets', body= json.loads(jsonData['Message']))
 			print("indexed into elastic search")
 		print("-------------------------------")
+
+	response = Response("200OK")
+	response.headers['Access-Control-Allow-Origin'] = '*'
+	return response	
+
+
+
+@app.route ('/',methods = ['POST', 'GET'])
+def processInput():
+	optionsTemplateCode = makeOptionsData()
+	if request.method == 'POST':
 		searchKey = request.form['keyword']
 		type_txt= request.form['happy']
 		isnormal=request.form['isnormal']
+		dist=request.form['distance']
 		lat=""
 		lng=""
-		dist=request.form['distance']
 		if(isnormal is "2"):
 			lat=str(request.form['lat'])
 			lng=str(request.form['lng'])
@@ -75,8 +75,9 @@ def processInput():
 		tweets = getMatchingTweets(searchKey,type_txt,isnormal,lat,lng,dist)	
 	# should improve on this logic	
 	else:
-		#print ("NOT A POST REQUEST", "The template code is ", optionsTemplateCode)
+		print ("NOT A POST REQUEST", "The template code is ", optionsTemplateCode)
 		tweets = ""	
+	tweets = ""	
 	return render_template('tweetmap.html', tweets = tweets)
 	
 

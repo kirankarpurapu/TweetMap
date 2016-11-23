@@ -1,0 +1,368 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+		<meta name="description" content="">
+		<meta name="author" content="">
+
+		<title>TweetMap</title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+		<link href='https://fonts.googleapis.com/css?family=Orbitron|Open+Sans' rel='stylesheet' type='text/css'>
+		<style>
+			body {
+			  padding-top: 70px;
+			  font-family: 'Open Sans', sans-serif;
+			}
+			.btn.active, .btn:active, .btn.active:hover {
+				background-color: #dff0d8;
+				border-color: #dff0d8;
+				color: #3276b1;
+			}
+			#tooltip{
+				color: #3276b1;
+
+			}
+			#radioBtn .notActive{
+				color: #3276b1;
+				background-color: #fff;
+				border-color: #fff;
+			}
+			.redC	{
+				color:#d9534f;
+			}
+			.inlinedisp {
+				display:inline-block;
+			}
+		</style>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAEYOm26kl6_5blyE5DAP-HQAf2dDUp8N4&libraries=visualization" type="text/javascript"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='markerclusterer.js') }}"></script>
+		<script type="text/javascript">
+
+		$( document ).ready(function() {
+			$('#radioBtn a').on('click', function(){
+				radioChange(this);
+			});
+    		renderTweets();
+		});
+		
+		function radioChange(elt)	{
+			var sel = $(elt).data('title');
+			var tog = $(elt).data('toggle');
+			$('#'+tog).prop('value', sel);
+			$('a[data-toggle="'+tog+'"]').not('[data-title="'+sel+'"]').removeClass('active').addClass('notActive');
+			$('a[data-toggle="'+tog+'"][data-title="'+sel+'"]').removeClass('notActive').addClass('active');
+			console.log(sel);
+			if(sel=="1")
+				pin();
+			else
+				heat();
+		}
+		
+		var map,heatmap,isnormal,lat,lng,dist, name ,text;
+		var taxiData=[];
+		var nameArray = [];
+		var textArray = [];
+		var currPosition=new Array(25,0);
+			function initialize() {
+				if(currPosition != null)	{
+					var myCenter=new google.maps.LatLng(currPosition[0],currPosition[1]);
+					var mapProp = {
+					center:myCenter,
+					styles: [{"featureType":"all","elementType":"labels.text.fill","stylers":[{"color":"#ffffff"}]},{"featureType":"all","elementType":"labels.text.stroke","stylers":[{"color":"#000000"},{"lightness":13}]},{"featureType":"administrative","elementType":"geometry.fill","stylers":[{"color":"#000000"}]},{"featureType":"administrative","elementType":"geometry.stroke","stylers":[{"color":"#144b53"},{"lightness":14},{"weight":1.4}]},{"featureType":"landscape","elementType":"all","stylers":[{"color":"#08304b"}]},{"featureType":"poi","elementType":"geometry","stylers":[{"color":"#0c4152"},{"lightness":5}]},{"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#000000"}]},{"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#0b434f"},{"lightness":25}]},{"featureType":"road.arterial","elementType":"geometry.fill","stylers":[{"color":"#000000"}]},{"featureType":"road.arterial","elementType":"geometry.stroke","stylers":[{"color":"#0b3d51"},{"lightness":16}]},{"featureType":"road.local","elementType":"geometry","stylers":[{"color":"#000000"}]},{"featureType":"transit","elementType":"all","stylers":[{"color":"#146474"}]},{"featureType":"water","elementType":"all","stylers":[{"color":"#021019"}]}],
+					zoom:2,
+					mapTypeId:google.maps.MapTypeId.ROADMAP
+					};
+					map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+				  
+					var marker=new google.maps.Marker({
+					  position:myCenter
+					  });
+					//marker.setMap(map);
+					
+					var infowindow = new google.maps.InfoWindow({
+						content:"hey"
+					});
+					
+					google.maps.event.addListener(map, "rightclick", function(event) {
+						document.getElementById('isnormal').value="1";
+						submitForm(document.getElementById('sel1'));
+					});
+					google.maps.event.addListener(map, "click", function(event) {
+						document.getElementById('isnormal').value="2";
+						document.getElementById('lat').value=event.latLng.lat();
+						document.getElementById('lng').value=event.latLng.lng();
+						submitForm(document.getElementById('sel1'));
+					});
+					
+					
+				 if(isnormal=="2")	{
+				 var myCity = new google.maps.Circle({
+                        strokeColor: '#f0ffff',
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: '#000f0f',
+                        fillOpacity: 0.25,
+                        map: map,
+                        center: new google.maps.LatLng(parseInt(lat), parseInt(lng)),
+                        radius: parseInt(dist) * 1000
+                });
+				}
+				}
+			}
+
+			function submitForm(element){
+				//var queryString = element.options[ element.selectedIndex ].text;
+				//document.getElementById("happy").value = queryString;
+				element.form.submit();
+
+			}
+			var entityMap = {
+			  "&": "&amp;",
+			  "<": "&lt;",
+			  ">": "&gt;",
+			  '"': '&quot;',
+			  "'": '&#39;',
+			  "/": '&#x2F;'
+			};
+
+			function escapeHtml(string) {
+			  return String(string).replace(/[&<>"'\/]/g, function (s) {
+				return entityMap[s];
+			  });
+			}
+			// Showing the tweets, this part of the code gets executed when the page is loaded
+			function renderTweets(){
+			var list  = '{{tweets|safe}}';
+			initialize();
+			if(list == null || list.length==0)
+			{
+				console.log("YAHOO!");
+				//initialize();
+
+			}
+			else{
+				//console.log("KIRAN "+typeof list+ list.length +list);
+				 res = JSON.parse(list);
+				 console.log(typeof res)
+				 console.log(res);
+				 
+				 //console.log(data.length);
+				 //console.log(data);
+				 var searchKey=res['search_key'];
+				 $("#sel1").val(searchKey);
+				 var data=res['result'];
+				 var type_txt=res['type_txt'];
+				 dist=res['dist'];
+				 console.log(dist);
+				 $("#distance").val(parseInt(dist));
+				 isnormal=res['isnormal'];
+
+				 lat=res['lat'];
+				 lng=res['lng'];
+				 text = res['text'];
+				 name = res['name'];
+				 //console.log(name +" : "+ text+ "@" + lat+"@" + lng + "@");
+				 $("#isnormal").val(isnormal);
+				 $("#lat").val(lat);
+				 $("#lng").val(lng);
+				 var size=0;
+				 if(data!=null)	{
+					 size=data.length;
+					 for(var i = 0; i < data.length; i++) {
+						var obj = JSON.parse(data[i]);
+						taxiData[i] = new google.maps.LatLng(obj['latitude'], obj['longitude']);
+						nameArray[i] = obj['name'];
+						textArray[i] = obj['text'];
+						//console.log(nameArray[i] +" : "+ textArray[i]+ "@" + lat+"@" + lng + "@");
+
+						//console.log("ABCD "+obj['text']);
+					 }
+					 if(type_txt=="1")	{
+							radioChange(document.getElementById('pts'));
+							//pin();
+						}
+						else	{
+							radioChange(document.getElementById('bts'));
+							//heat();
+					}
+					 
+				 }
+				 $('#successtxt').html(" "+size+ " results found for " +searchKey);
+				 $('#alertsuccess').show();
+			}	
+			}
+			function pin() {
+			initialize();
+			var markers = [];
+			var infowindow;
+			var image = 'http://www.stalbertgazette.com/assets/images/hockeypool/twitterIcon.png';
+			 var infowindow = null;
+
+				infowindow = new google.maps.InfoWindow({
+				content: "holding..."
+				});
+            for (i = 0; i < taxiData.length; i++) {
+            	console.log("KIRAN" + nameArray[i]+" : "+ textArray[i]);
+            	//var contentInternal = '<div id = "tooltip">'+nameArray[i]+'</div> :' + textArray[i];
+            	var contentInternal = '<h4>'+nameArray[i]+'</h4> :' + textArray[i];
+           //  	  infowindow = new google.maps.InfoWindow({
+         	 // 		content: nameArray[i]+" : "+ textArray[i]
+       			 // });
+
+       			
+
+                marker = new google.maps.Marker({
+								animation: google.maps.Animation.DROP,
+								icon: image,
+								position: taxiData[i],
+								map: map,
+								text : nameArray[i]+" : "+ textArray[i]
+							});
+
+				google.maps.event.addListener(marker, 'click', function () {
+				infowindow.setContent(this.text);
+				infowindow.open(map, this);
+});
+
+
+           //      marker.addListener('click', function() {
+         		// 	 infowindow.open(map, marker);
+       			 // });
+
+     //            	google.maps.event.addListener(marker,'click', (function(marker,content,infowindow){ 
+    	// 				return function() {
+     //    					infowindow.setContent(nameArray[i]+" : "+ textArray[i]);
+     //    					infowindow.open(map,marker);
+    	// 				};
+					// })(marker,content,infowindow));  
+
+					// google.maps.event.addListener(marker, 'mouseover', (function(marker, infowindow) {  
+     //       				return function() {  
+     //           				var content =  contentInternal;
+     //           				infowindow.setContent(content);  
+     //          				infowindow.open(map, marker);  
+     //       				}  
+     //     			})(marker,infowindow)); 
+
+     //     			google.maps.event.addListener(marker, 'mouseout', (function(marker, infowindow) {  
+     //       				return function() {  
+     //           				//var content =  contentInternal;
+     //           				//infowindow.setContent(content);  
+     //          				//infowindow.open(map, marker);  
+     //          				infowindow.close();
+              				
+     //       				}  
+     //     			})(marker, infowindow));
+
+
+							markers.push(marker);
+            }
+            
+			var markerCluster = new MarkerClusterer(map, markers,{imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
+			}
+			function heat() {
+            initialize();
+            //var pointArray = new google.maps.MVCArray(taxiData);
+            heatmap = new google.maps.visualization.HeatmapLayer({
+                data: new google.maps.MVCArray(taxiData),
+                radius: 25,
+				map: map
+            });
+			}
+			
+		</script>
+	</head>
+	<body>
+		<nav class="navbar navbar-default navbar-fixed-top">
+			<div style="width:28%;padding-left:5px;" class="navbar-header">
+				<h2><span style="font-family: 'Orbitron', sans-serif;color:#f48820;">Tweet</span><span style="font-family: 'Orbitron', sans-serif;color:#1f212d;">Map</span></h2> 
+			</div>
+			<!-- {{tweets}} -->
+	<ul id="results">
+	{#
+     		{% for result in tweets %}
+     			
+    			 {% for tweet in result recursive %}
+
+    			 <h5> sharan </h5>
+				<li>Result: {{ tweet.text}}</li>    			 	
+    			 {% endfor %}
+     		
+
+     		<li>Result: {{ result}}</li>
+     		{% endfor %}
+			</ul>
+			#}
+			
+		</nav>
+		<div id="jumbo1" class="jumbotron" style="margin-top:-20px;padding-top:15px;padding-bottom:5px;height:100%;">
+			<div id="myform" class="container" style="margin-right:0px;margin-left:0px;padding-left:8px;padding-right:8px;height:100%;width:98%" >
+				<div id="mapdiv" class="col-lg-10">
+					<div id="googleMap" style="width:100%;height:90%;"></div>
+				</div>
+				<div id="optiondiv" class="col-lg-2">
+				<form id="submitForm" method="POST" action="http://localhost:5000/">
+					<div style="width:100%;float:left;padding-top:13px;">
+						<label for="sel1">Select list (select one):</label>
+						<select name="keyword" class="form-control" id="sel1" onchange=" submitForm(this)" name="selectOptionsList">
+							<option value = "TheWalkingDead" selected>TheWalkingDead</option>
+							<option value = "Bentancur">Bentancur</option>
+							<option value = "india">india</option>
+							<option value = "election">election</option>
+							<option value = "trump">trump</option>
+							<option value = "hillary">hillary</option>
+							<option value = "facebook">facebook</option>
+							<option value = "chelsea">chelsea</option>
+							<option value = "DDoS">DDoS</option>
+							<option value = "dhoni">dhoni</option>
+							<option value = "apple">apple</option>
+							<option value = "RespectJustin">RespectJustin</option>
+						</select>
+						<input type="hidden" name="isnormal" id="isnormal" value="1" />
+						<input type="hidden" name="type_txt" id="type_txt" value="1" />
+						<input type="hidden" name="lat" id="lat" value="0.0" />
+						<input type="hidden" name="lng" id="lng" value="0.0" />
+					</div>
+					<div style="padding-top:13px;float:left;">
+						<div class="col-lg-12">
+							<!--<div class="input-group input-group-sm">
+								<span id="gender">Map Type </span>
+								<div class="btn-group" data-toggle="buttons">
+									<label class="btn btn-sm btn-default active">
+										<input type="radio" id="gender-male" name="gender" value="1" /> Points
+									</label>
+									<label class="btn btn-sm btn-default">
+										<input type="radio" id="gender-female" name="gender" value="2" /> HeatMap
+									</label>
+								</div>
+							</div>-->
+							<div class="input-group">
+								<div id="radioBtn" class="btn-group">
+									<a id="pts" class="btn btn-primary btn-sm active" data-toggle="happy" data-title="1">Points</a>
+									<a id="hts" class="btn btn-primary btn-sm notActive" data-toggle="happy" data-title="2">HeatMap</a>
+								</div>
+								<input type="hidden" name="happy" id="happy" value="1">
+							</div>
+						</div>
+					</div>
+					<div style="padding-top:13px;" class="col-lg-12">
+						<div class="input-group input-group-sm">
+						  <span class="input-group-addon" >Distance</span>
+						  <input id="distance" style="width:90%;" type="number" class="form-control" name="distance" value="2000"  min=100 max=6000 placeholder="Distance in Kms" required />
+						</div><span id="emailsignuphelp" style="display:inline;color:#d9534f" class="help-block with-errors"><ul class="list-unstyled"><li>Enter distance in kms. Left click on a point in map. To view all results, right click on map</li></ul></span><!-- /input-group --></div>
+					<div style="padding-top:13px;float:left;">
+	<div id="alertsuccess" style="padding-top:13px;display:none;" class="col-lg-12">
+	<div class="alert alert-success" role="alert">
+  <strong>Success!</strong><span id="successtxt" ></span>
+</div></div>
+	</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

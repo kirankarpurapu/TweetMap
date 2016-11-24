@@ -140,7 +140,7 @@
 			var list  = '{{tweets|tojson}}'
 			// var list  = '{{tweets|safe}}'
 
-			console.log("Data from backend: " + list);
+			//console.log("Data from backend: " + list);
 			initialize();
 			if(list == null || list.length==0)
 			{
@@ -150,10 +150,10 @@
 			}
 			else{
 				//console.log("KIRAN "+typeof list+ list.length +list);
-				 res = JSON.parse(list);
-				 // res = list;
+				 // res = JSON.parse(list);
+				 res = list;
 				 // console.log(typeof res)
-				 console.log(res);
+				 console.log("data from backend" + res);
 				 
 				 //console.log(data.length);
 				 //console.log(data);
@@ -161,7 +161,8 @@
 				 $("#sel1").val(searchKey);
 				 var data=res['result'];
 				 var type_txt=res['type_txt'];
-				 dist=res['dist'];
+				 // dist=res['dist'];
+				 dist = 2000;
 				 console.log(dist);
 				 $("#distance").val(parseInt(dist));
 				 isnormal=res['isnormal'];

@@ -1,10 +1,12 @@
 
 from __future__ import print_function
 from flask import Flask, redirect, url_for, request, render_template, Response
+from requests_aws4auth import AWS4Auth
 import json
 import os
 import elasticsearch
 import urllib2
+
 
 
 #SNS subject : TweetMap
@@ -13,22 +15,22 @@ import urllib2
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
-es = elasticsearch.Elasticsearch()
+# es = elasticsearch.Elasticsearch()
 
-# host = 'search-anirudh-kiran-twit-1-5zni7ksbpvchyaemgiwux3rzpi.us-west-2.es.amazonaws.com'
-# AWS_ACCESS_KEY = "yours"
-# AWS_SECRET_KEY = "yours"
-# REGION = "us-west-2"
+host = 'search-tweetmap-kbz75cdphmmyi74fzn74suhsye.us-west-2.es.amazonaws.com'
+AWS_ACCESS_KEY = "AKIAJISODG75YKJSYFLQ"
+AWS_SECRET_KEY = "a9DU2PRNBy4cH2KQwXjsR2UT90hhkwq4fOc/FH6T"
+REGION = "us-west-2"
 
-#awsauth = AWS4Auth(AWS_ACCESS_KEY, AWS_SECRET_KEY, REGION, 'es')
+awsauth = AWS4Auth(AWS_ACCESS_KEY, AWS_SECRET_KEY, REGION, 'es')
 
-# es = Elasticsearch(
-#     hosts=[{'host': host, 'port': 443}],
-#     http_auth=awsauth,
-#     use_ssl=True,
-#     verify_certs=True,
-#     connection_class=RequestsHttpConnection
-# )
+es = Elasticsearch(
+    hosts=[{'host': host, 'port': 443}],
+    http_auth=awsauth,
+    use_ssl=True,
+    verify_certs=True,
+    connection_class=RequestsHttpConnection
+)
 @app.route('/notifications',methods = ['POST', 'GET'])
 def processNotification():
 	if request.method == 'POST':
@@ -45,7 +47,7 @@ def processNotification():
 		if hdr == 'Notification':
 			# messageJSON = json.loads(jsonData['Message'])
 			print("Notification content \n" + jsonData['Message'])
-			es.index(index='myposts', doc_type='mytweets', body= json.loads(jsonData['Message']))
+			es.index(index='myposts', doc_type='mytweets', body= jsonData['Message'])
 			print("indexed into elastic search")
 		print("-------------------------------")
 
@@ -87,7 +89,7 @@ def getMatchingTweets(search_key,type_txt,isnormal,lat,lng,dist):
 	print("START")
 	#bodyOfRequest = '{"query":{"query_string":{"query": "' + search_key+ '"}}}'
 	bodyOfRequest=""
-	firstPart = '{ "query":{"query_string":{"query":'
+	firstPart = '{"size":3000, "query":{"query_string":{"query":'
 	lastPart = ' }}}'
 	if(isnormal is "1"):
 		#bodyOfRequest = '{"fields" : ["latitude", "longitude"],"query":{"term":{"search_key" : "'+search_key.lower()+'" }},"size":3000}'
@@ -101,28 +103,28 @@ def getMatchingTweets(search_key,type_txt,isnormal,lat,lng,dist):
 	#query_string = "search_key:%s"% search_key
 	#res = es.search(index="posts", q=query_string, size=2000)
 	print("%d documents found" % res['hits']['total'])
+	# print("[hits][hits] count " , res['hits']['hits'])
+	print("Len of results is %d " %len(res['hits']['hits']))
 	for doc in res['hits']['hits']:
 		#print("From elatic search"+doc['_source']['text'])
+		data_dict = {}
 		print("*************")
 		data_dict['name'] = doc['_source']['userName']
 		data_dict['text'] = doc['_source']['text']
 		data_dict['date'] = doc['_source']['date']
 		data_dict['latitude'] = doc['_source']['latitude']
 		data_dict['longitude'] = doc['_source']['longitude']
+		data_dict['sentiment'] = doc['_source']['sentiment']
+	
+		listOfTweetsAsList.append(data_dict)
 
-		# Replaced the following lines with the code above.
-		#dict['latitude'] = doc['fields']['latitude']
-		#dict['longitude'] = doc['fields']['longitude']
-		# jsonArray = json.dumps(data_dict)
-		jsonArray = data_dict
-		listOfTweetsAsList.append(jsonArray)
-		resultDict['search_key']=search_key
-		resultDict['type_txt']=type_txt
-		resultDict['dist']=dist
-		resultDict['lat']=lat
-		resultDict['lng']=lng
-		resultDict['isnormal']=isnormal
-		resultDict['result']=listOfTweetsAsList
+	resultDict['search_key']=search_key
+	resultDict['type_txt']=type_txt
+	resultDict['dist']=dist
+	resultDict['lat']=lat
+	resultDict['lng']=lng
+	resultDict['isnormal']=isnormal
+	resultDict['result']=listOfTweetsAsList
 
 	if res['hits']['total'] is 0:
 		print ("SORRY, NO MATCHING TWEETS FOUND")
@@ -135,6 +137,7 @@ def getMatchingTweets(search_key,type_txt,isnormal,lat,lng,dist):
 		resultDict['isnormal']=isnormal
 		resultDict['message'] = message
 		resultDict['result'] = None
+		resultDict['sentiment'] = None
 		#tweets = json.dumps(data_dict)
 		# dataToReturn = stringEscape(str(json.dumps(resultDict))) 
 		dataToReturn = resultDict

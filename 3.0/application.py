@@ -1,6 +1,13 @@
 from __future__ import print_function
 from flask import Flask, redirect, url_for, request, render_template, Response
 from requests_aws4auth import AWS4Auth
+from flask_socketio import SocketIO
+# from flask.ext.socketio import SocketIO, emit
+
+# virtualenv --clear MYENV
+
+# import socketio
+# import eventlet
 import json
 import os
 import urllib3
@@ -11,6 +18,9 @@ from elasticsearch import Elasticsearch, RequestsHttpConnection
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
+socketio = SocketIO(app)
+
+
 
 host = 'search-tweetmap-kbz75cdphmmyi74fzn74suhsye.us-west-2.es.amazonaws.com'
 AWS_ACCESS_KEY = "AKIAJISODG75YKJSYFLQ"
@@ -32,19 +42,25 @@ es = Elasticsearch(
 def processNotification():
     if request.method == 'POST':
         print("------------------------------")
-        hdr = request.headers.get('X-Amz-Sns-Message-Type')
+        # print(type(request.body))
+        body = json.loads(request.data.decode("utf-8"))
+        hdr = body['Type']
+        # hdr = request.headers.get('X-Amz-Sns-Message-Type')
         print("header : " + str(hdr))
-        jsonData = json.loads(request.data)
-        if hdr == 'SubscriptionConfirmation' and 'SubscribeURL' in jsonData:
-            URL = jsonData['SubscribeURL']
-            print("URL : " + URL)
-            urllib3.urlopen(URL).read()
+        # jsonData = json.loads(request.data)
+        # if hdr == 'SubscriptionConfirmation' and 'SubscribeURL' in jsonData:
+        if hdr == 'SubscriptionConfirmation' :
+            print("came into the if statement")
+            URL = body['SubscribeURL']
+            print("URL : " + str(URL))
+            urllib3.PoolManager().request('GET', URL)
+            # urllib3.urlopen(URL).read()
             print("Made a get request to the confirmation URL")
         print("------------------------------")
         if hdr == 'Notification':
             # messageJSON = json.loads(jsonData['Message'])
-            print("Notification content \n" + jsonData['Message'])
-            es.index(index='myposts', doc_type='mytweets', body=jsonData['Message'])
+            print("Notification content \n" + body['Message'])
+            es.index(index='myposts', doc_type='mytweets', body=body['Message'])
             print("indexed into elastic search")
         print("-------------------------------")
 
@@ -105,6 +121,7 @@ def getMatchingTweets(search_key, type_txt, isnormal, lat, lng, dist):
         bodyOfRequest = firstPart + '"' + search_key + '"' + lastPart
     print("BODY", bodyOfRequest)
     res = es.search(index="myposts", doc_type="mytweets", body=bodyOfRequest)
+    
     # query_string = "search_key:%s"% search_key
     # res = es.search(index="posts", q=query_string, size=2000)
     print("%d documents found" % res['hits']['total'])
@@ -143,17 +160,20 @@ def getMatchingTweets(search_key, type_txt, isnormal, lat, lng, dist):
         resultDict['message'] = message
         resultDict['result'] = None
         resultDict['sentiment'] = None
-        # tweets = json.dumps(data_dict)
-        # dataToReturn = stringEscape(str(json.dumps(resultDict)))
+       
         dataToReturn = resultDict
-        # print ("DATA to return : " , dataToReturn)
+       
         return dataToReturn
     else:
         print("HORRAY!!, FOUND A FEW MATCHING TWEETS for " + search_key)
         resultDict['message'] = "SUCCESS"
-        # dataToReturn = stringEscape(str(json.dumps(resultDict)))
-        # dataToReturn = str(json.dumps(resultDict))
-        # print("RETURNING ******************* " , resultDict ," to the front end")
+        print("--------------------")
+        socketResponse = {}
+        socketResponse['success'] = True
+        json_data_socket = json.dumps(socketResponse)
+        socketio.emit('new_tweet_indexed', json_data_socket)
+        print("made a new emit")
+        print("---------------------")
         dataToReturn = resultDict
         return stringEscape(str(json.dumps(dataToReturn)))
 
@@ -161,4 +181,7 @@ def stringEscape(myString):
     return myString.translate(myString.maketrans({"-":  r"\-", "]":  r"\]", "\\": r"\\", "^":  r"\^", "$":  r"\$", "*":  r"\*", ".":  r"\.", "'":  r"\'", '"':  r'\"'}))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    # app.run(host='0.0.0.0', debug=True)
+    # socketio.run(app)
+    socketio.run(app, host='0.0.0.0', port = 5500, debug = True)
+    print("SOCKET IO RUNNING")

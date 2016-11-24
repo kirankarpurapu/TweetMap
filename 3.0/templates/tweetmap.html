@@ -10,6 +10,29 @@
 		<title>TweetMap</title>
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 		<link href='https://fonts.googleapis.com/css?family=Orbitron|Open+Sans' rel='stylesheet' type='text/css'>
+		
+
+		<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+<script>
+function hideGif() {
+			document.getElementById("gif").style.visibility = "hidden";
+		}
+function connectToSocket() {
+
+	var socket = io('http://74.71.209.7:5000', {reconnect: true});
+	// var socket = io('http://74.71.209.7:3000', {reconnect: true});
+  socket.on('new_tweet_indexed', function(msg){
+    // alert("flask");
+    document.getElementById("gif").style.visibility = "visible";
+			setTimeout(hideGif, 3000);
+  });
+
+}
+  
+</script>
+
+
+	
 		<style>
 			body {
 			  padding-top: 70px;
@@ -43,10 +66,12 @@
 		<script type="text/javascript">
 
 		$( document ).ready(function() {
+			 connectToSocket();
 			$('#radioBtn a').on('click', function(){
 				radioChange(this);
 			});
     		renderTweets();
+    		document.getElementById("gif").style.visibility = "hidden";
 		});
 		
 		function radioChange(elt)	{
@@ -137,7 +162,7 @@
 			// Showing the tweets, this part of the code gets executed when the page is loaded
 			function renderTweets(){
 			var list  = '{{tweets|safe}}';
-			console.log("Data from backend " + list);
+			// console.log("Data from backend " + list);
 
 			initialize();
 			if(list == null || list.length==0)
@@ -155,8 +180,8 @@
 				 $("#sel1").val(searchKey);
 				 var data=res['result'];
 				 var type_txt=res['type_txt'];
-				 // dist=res['dist'];
-				 dist = 2000;
+				 dist=res['dist'];
+				 // dist = 2000;
 				 console.log(dist);
 				 $("#distance").val(parseInt(dist));
 				 isnormal=res['isnormal'];
@@ -206,7 +231,7 @@
 				content: "holding..."
 				});
             for (i = 0; i < taxiData.length; i++) {
-            	console.log("KIRAN" + nameArray[i]+" : "+ textArray[i]);
+            	// console.log("KIRAN" + nameArray[i]+" : "+ textArray[i]);
             	//var contentInternal = '<div id = "tooltip">'+nameArray[i]+'</div> :' + textArray[i];
             	var contentInternal = '<h4>'+nameArray[i]+'</h4> :' + textArray[i];
            //  	  infowindow = new google.maps.InfoWindow({
@@ -360,9 +385,12 @@
   <strong>Success!</strong><span id="successtxt" ></span>
 </div></div>
 	</div>
+	<iframe id="gif" src="//giphy.com/embed/DWuMCtn5UnQIw" width="120" height="120" ></iframe>
+	<!-- <iframe id="gif" src="" width="120" height="120" ></iframe> -->
 					</form>
 				</div>
 			</div>
 		</div>
+
 	</body>
 </html>

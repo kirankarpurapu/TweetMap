@@ -137,27 +137,31 @@
 			// Showing the tweets, this part of the code gets executed when the page is loaded
 			function renderTweets(){
 			// var list  = '{{tweets|safe}}';
-			var list  = '{{tweets|tojson}}'
+			var list  = '{{tweets|tojson}}';
 			// var list  = '{{tweets|safe}}'
 
 			//console.log("Data from backend: " + list);
 			initialize();
 			if(list == null || list.length==0)
 			{
-				console.log("YAHOO!");
+				console.log("NO DATA");
 				//initialize();
 
 			}
 			else{
 				//console.log("KIRAN "+typeof list+ list.length +list);
 				 // res = JSON.parse(list);
-				 res = list;
+				 res =  list;
+				 // res = JSON.stringify(list);
+				 console.log("YAHOO!" );
 				 // console.log(typeof res)
 				 console.log("data from backend" + res);
 				 
+				 
 				 //console.log(data.length);
 				 //console.log(data);
-				 var searchKey=res['search_key'];
+				 var searchKey = res['search_key'];
+				 console.log("search key " + searchKey);
 				 $("#sel1").val(searchKey);
 				 var data=res['result'];
 				 var type_txt=res['type_txt'];

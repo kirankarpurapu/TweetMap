@@ -148,7 +148,7 @@ def getMatchingTweets(search_key,type_txt,isnormal,lat,lng,dist):
 		resultDict['message'] = "SUCCESS"
 		# dataToReturn = stringEscape(str(json.dumps(resultDict)))
 		# dataToReturn = str(json.dumps(resultDict)) 
-		print("RETURNING ******************* " , resultDict ," to the front end")
+		# print("RETURNING ******************* " , resultDict ," to the front end")
 		dataToReturn = resultDict
 		#print ("DATA to return : " , dataToReturn)
 		# print(type(dataToReturn))

@@ -137,7 +137,7 @@
 			// Showing the tweets, this part of the code gets executed when the page is loaded
 			function renderTweets(){
 			var list  = '{{tweets|safe}}';
-			console.log("Data from backend " + list.response);
+			console.log("Data from backend " + list);
 
 			initialize();
 			if(list == null || list.length==0)
@@ -146,11 +146,8 @@
 				//initialize();
 			}
 			else{
-				 res =  list;
+				 res =  JSON.parse(list);
 				 console.log("YAHOO!" );
-				 console.log("data from backend" + res);
-				 
-				 
 				 //console.log(data.length);
 				 //console.log(data);
 				 var searchKey = res['search_key'];

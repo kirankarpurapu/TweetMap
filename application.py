@@ -6,6 +6,7 @@ import json
 import os
 import elasticsearch
 import urllib2
+import flask
 
 
 
@@ -80,7 +81,14 @@ def processInput():
 		print ("NOT A POST REQUEST", "returning empty tweet array")
 		tweets = {}	
 	return render_template('tweetmap.html', tweets = tweets)
-	
+
+
+def myReplace(myString):
+	dictionary = {"-":  r"\-", "]":  r"\]", "\\": r"\\", "^":  r"\^", "$":  r"\$", "*":  r"\*", ".":  r"\.", "'":  r"\'", '"':  r'\"'}
+	for character in myString:
+		if character in dictionary:
+			myString = myString.replace(character, dictionary[character])
+	return myString		
 
 def getMatchingTweets(search_key,type_txt,isnormal,lat,lng,dist):
 	listOfTweetsAsList = []
@@ -153,14 +161,12 @@ def getMatchingTweets(search_key,type_txt,isnormal,lat,lng,dist):
 		#print ("DATA to return : " , dataToReturn)
 		# print(type(dataToReturn))
 		# return dataToReturn
-		return myReplace(str(json.dumps(resultDict)))
+		# return json.dumps(resultDict)
+		# reponseData = Response(response = resultDict, status = 200, mimetype = "application/json")
+		# return responseData
+		return flask.jsonify(**resultDict)
 
-def myReplace(myString):
-	dictionary = {"-":  r"\-", "]":  r"\]", "\\": r"\\", "^":  r"\^", "$":  r"\$", "*":  r"\*", ".":  r"\.", "'":  r"\'", '"':  r'\"'}
-	for character in myString:
-		if character in dictionary:
-			myString = myString.replace(character, dictionary[character])
-	return myString		
+		
 def stringEscape(myString):
 	delete_chars=''.join(chr(i) for i in xrange(32))                        
 	return myString.translate(None,delete_chars)

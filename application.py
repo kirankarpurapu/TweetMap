@@ -152,7 +152,8 @@ def getMatchingTweets(search_key,type_txt,isnormal,lat,lng,dist):
 		dataToReturn = resultDict
 		#print ("DATA to return : " , dataToReturn)
 		# print(type(dataToReturn))
-		return dataToReturn
+		# return dataToReturn
+		return str(json.dumps(resultDict))
 
 def stringEscape(myString):
 	return myString.translate(myString.maketrans({"-":  r"\-", "]":  r"\]", "\\": r"\\", "^":  r"\^", "$":  r"\$", "*":  r"\*", ".":  r"\.", "'":  r"\'", '"':  r'\"'}))

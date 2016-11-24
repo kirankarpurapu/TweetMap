@@ -137,10 +137,15 @@
 			// Showing the tweets, this part of the code gets executed when the page is loaded
 			function renderTweets(){
 			// var list  = '{{tweets|safe}}';
-			var list  = '{{tweets|tojson}}';
+			// var list  = '{{tweets|tojson}}';
+			var list  = '{{tweets|tojson|safe}}';
+			// var list = eval('('+ list1 + ')');
+			// var list = JSON.parse(list1);
+
 			// var list  = '{{tweets|safe}}'
 
-			//console.log("Data from backend: " + list);
+			var list1 = JSON.parse(list);
+			console.log("Data from backend: " + typeof(list1));
 			initialize();
 			if(list == null || list.length==0)
 			{
@@ -152,6 +157,7 @@
 				//console.log("KIRAN "+typeof list+ list.length +list);
 				 // res = JSON.parse(list);
 				 res =  list;
+
 				 // res = JSON.stringify(list);
 				 console.log("YAHOO!" );
 				 // console.log(typeof res)
@@ -316,7 +322,7 @@
 					<div id="googleMap" style="width:100%;height:90%;"></div>
 				</div>
 				<div id="optiondiv" class="col-lg-2">
-				<form id="submitForm" method="POST" action="http://localhost:5000/">
+				<form id="submitForm" method="POST" action="/">
 					<div style="width:100%;float:left;padding-top:13px;">
 						<label for="sel1">Select list (select one):</label>
 						<select name="keyword" class="form-control" id="sel1" onchange=" submitForm(this)" name="selectOptionsList">

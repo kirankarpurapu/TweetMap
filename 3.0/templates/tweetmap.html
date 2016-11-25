@@ -15,16 +15,20 @@
 		<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 <script>
 function hideGif() {
-			document.getElementById("gif").style.visibility = "hidden";
+			// document.getElementById("gif").style.visibility = "hidden";
+document.getElementById("gif").src = " https://s3-us-west-2.amazonaws.com/kiranbucket001/volcano.gif";
+
+			// document.getElementById("gif").style.visibility = "hidden";
 		}
 function connectToSocket() {
 
-	var socket = io('http://74.71.209.7:5000', {reconnect: true});
+	var socket = io('http://98.116.40.213:5000/', {reconnect: true});
 	// var socket = io('http://74.71.209.7:3000', {reconnect: true});
   socket.on('new_tweet_indexed', function(msg){
     // alert("flask");
-    document.getElementById("gif").style.visibility = "visible";
-			setTimeout(hideGif, 3000);
+    document.getElementById("gif").src = " //giphy.com/embed/ID3O3qSSxszza";
+    // document.getElementById("gif").style.visibility = "visible";
+			setTimeout(hideGif, 2000);
   });
 
 }
@@ -46,6 +50,10 @@ function connectToSocket() {
 			#tooltip{
 				color: #3276b1;
 
+			}
+
+			#gif {
+				border-color: #dff0d8;
 			}
 			#radioBtn .notActive{
 				color: #3276b1;
@@ -71,7 +79,7 @@ function connectToSocket() {
 				radioChange(this);
 			});
     		renderTweets();
-    		document.getElementById("gif").style.visibility = "hidden";
+    		// document.getElementById("gif").style.visibility = "hidden";
 		});
 		
 		function radioChange(elt)	{
@@ -385,7 +393,18 @@ function connectToSocket() {
   <strong>Success!</strong><span id="successtxt" ></span>
 </div></div>
 	</div>
-	<iframe id="gif" src="//giphy.com/embed/DWuMCtn5UnQIw" width="120" height="120" ></iframe>
+
+	
+
+
+<!-- //giphy.com/embed/DWuMCtn5UnQIw --> <!-- black -->
+<!-- //giphy.com/embed/uMQcyqzwkCEeI --> <!-- heart -->
+
+
+
+	<!-- <iframe id="gif" style="border:none;" src="//giphy.com/embed/DWuMCtn5UnQIw" width="140" height="140" ></iframe> -->
+
+	<iframe id="gif" style="border:none;" src="https://s3-us-west-2.amazonaws.com/kiranbucket001/volcano.gif" width="140" height="140" ></iframe>
 	<!-- <iframe id="gif" src="" width="120" height="120" ></iframe> -->
 					</form>
 				</div>

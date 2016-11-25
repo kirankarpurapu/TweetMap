@@ -8,13 +8,9 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// var qs = require('querystring');
-
-
 
 app.get('/', function(req, res){
 	console.log('new page load request');
-	// io.emit('new_tweet_indexed', 'AnewTweet');
   res.sendfile('index.html');
 });
 

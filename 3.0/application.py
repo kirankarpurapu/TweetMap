@@ -171,7 +171,7 @@ def getMatchingTweets(search_key, type_txt, isnormal, lat, lng, dist):
         socketResponse = {}
         socketResponse['success'] = True
         json_data_socket = json.dumps(socketResponse)
-        socketio.emit('new_tweet_indexed', json_data_socket)
+        #socketio.emit('new_tweet_indexed', json_data_socket)
         print("made a new emit")
         print("---------------------")
         dataToReturn = resultDict

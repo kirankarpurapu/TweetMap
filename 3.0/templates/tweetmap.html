@@ -74,7 +74,7 @@ function connectToSocket() {
 		<script type="text/javascript">
 
 		$( document ).ready(function() {
-			 connectToSocket();
+			 //connectToSocket();
 			$('#radioBtn a').on('click', function(){
 				radioChange(this);
 			});
@@ -96,9 +96,10 @@ function connectToSocket() {
 		}
 		
 		var map,heatmap,isnormal,lat,lng,dist, name ,text;
-		var taxiData=[];
+		var tweetData=[];
 		var nameArray = [];
 		var textArray = [];
+		var sentiArray = [];
 		var currPosition=new Array(25,0);
 			function initialize() {
 				if(currPosition != null)	{
@@ -205,22 +206,17 @@ function connectToSocket() {
 				 if(data!=null)	{
 					 size=data.length;
 					 for(var i = 0; i < data.length; i++) {
-						// var obj = JSON.parse(data[i]);
 						var obj = data[i];
-						taxiData[i] = new google.maps.LatLng(obj['latitude'], obj['longitude']);
+						tweetData[i] = new google.maps.LatLng(obj['latitude'], obj['longitude']);
 						nameArray[i] = obj['name'];
 						textArray[i] = obj['text'];
-						//console.log(nameArray[i] +" : "+ textArray[i]+ "@" + lat+"@" + lng + "@");
-
-						//console.log("ABCD "+obj['text']);
+						sentiArray[i]=obj['sentiment'];
 					 }
 					 if(type_txt=="1")	{
 							radioChange(document.getElementById('pts'));
-							//pin();
 						}
 						else	{
 							radioChange(document.getElementById('bts'));
-							//heat();
 					}
 					 
 				 }
@@ -232,66 +228,33 @@ function connectToSocket() {
 			initialize();
 			var markers = [];
 			var infowindow;
-			var image = 'http://www.stalbertgazette.com/assets/images/hockeypool/twitterIcon.png';
+			var normal = 'http://www.stalbertgazette.com/assets/images/hockeypool/twitterIcon.png';
+			var positive = 'http://mikeblakehomes.com/wp-content/uploads/2016/06/twitter-logo-silhouette.png';
+			var negative = 'http://www.surfertoday.com/images/twitter.png';
 			 var infowindow = null;
 
 				infowindow = new google.maps.InfoWindow({
 				content: "holding..."
 				});
-            for (i = 0; i < taxiData.length; i++) {
-            	// console.log("KIRAN" + nameArray[i]+" : "+ textArray[i]);
-            	//var contentInternal = '<div id = "tooltip">'+nameArray[i]+'</div> :' + textArray[i];
-            	var contentInternal = '<h4>'+nameArray[i]+'</h4> :' + textArray[i];
-           //  	  infowindow = new google.maps.InfoWindow({
-         	 // 		content: nameArray[i]+" : "+ textArray[i]
-       			 // });
-
-       			
-
+            for (i = 0; i < tweetData.length; i++) {
+				var image=normal;
+				if(sentiArray[i].toLowerCase()=='positive')
+					image=positive;
+				else if (sentiArray[i].toLowerCase()=='negative')
+					image=negative;
+				var contentString = '<div><h3>'+nameArray[i]+'</h3>'+'<h4>'+sentiArray[i]+'</h4>'+'<div>'+'<p>'+textArray[i]+'</p></div></div>';
                 marker = new google.maps.Marker({
 								animation: google.maps.Animation.DROP,
 								icon: image,
-								position: taxiData[i],
+								position: tweetData[i],
 								map: map,
-								text : nameArray[i]+" : "+ textArray[i]
+								text : contentString
 							});
 
 				google.maps.event.addListener(marker, 'click', function () {
 				infowindow.setContent(this.text);
 				infowindow.open(map, this);
-});
-
-
-           //      marker.addListener('click', function() {
-         		// 	 infowindow.open(map, marker);
-       			 // });
-
-     //            	google.maps.event.addListener(marker,'click', (function(marker,content,infowindow){ 
-    	// 				return function() {
-     //    					infowindow.setContent(nameArray[i]+" : "+ textArray[i]);
-     //    					infowindow.open(map,marker);
-    	// 				};
-					// })(marker,content,infowindow));  
-
-					// google.maps.event.addListener(marker, 'mouseover', (function(marker, infowindow) {  
-     //       				return function() {  
-     //           				var content =  contentInternal;
-     //           				infowindow.setContent(content);  
-     //          				infowindow.open(map, marker);  
-     //       				}  
-     //     			})(marker,infowindow)); 
-
-     //     			google.maps.event.addListener(marker, 'mouseout', (function(marker, infowindow) {  
-     //       				return function() {  
-     //           				//var content =  contentInternal;
-     //           				//infowindow.setContent(content);  
-     //          				//infowindow.open(map, marker);  
-     //          				infowindow.close();
-              				
-     //       				}  
-     //     			})(marker, infowindow));
-
-
+				});
 							markers.push(marker);
             }
             
@@ -299,9 +262,8 @@ function connectToSocket() {
 			}
 			function heat() {
             initialize();
-            //var pointArray = new google.maps.MVCArray(taxiData);
             heatmap = new google.maps.visualization.HeatmapLayer({
-                data: new google.maps.MVCArray(taxiData),
+                data: new google.maps.MVCArray(tweetData),
                 radius: 25,
 				map: map
             });
